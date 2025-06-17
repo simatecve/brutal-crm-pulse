@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
@@ -188,6 +189,10 @@ const Tareas = () => {
     setIsDialogOpen(true);
   };
 
+  const handleSelectTarea = (tarea: Tarea) => {
+    setSelectedTarea(tarea);
+  };
+
   if (loading) {
     return (
       <div className="p-6">
@@ -241,7 +246,7 @@ const Tareas = () => {
           tareas={tareasFiltradas}
           onEdit={handleEdit}
           onDelete={handleDelete}
-          onSelectTarea={setSelectedTarea}
+          onSelectTarea={handleSelectTarea}
           onUpdate={fetchTareas}
         />
       )}

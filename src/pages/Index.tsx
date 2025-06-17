@@ -1,8 +1,13 @@
 
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/hooks/useAuth';
 import { Card } from '@/components/ui/card';
-import { Users, FolderOpen, FileText, CheckSquare, Clock, DollarSign } from 'lucide-react';
+import { Users, FolderOpen, FileText, CheckSquare, Clock, DollarSign, AlertTriangle, TrendingUp } from 'lucide-react';
+import DashboardChart from '@/components/dashboard/DashboardChart';
+import TasksOverview from '@/components/dashboard/TasksOverview';
+import UpcomingTasks from '@/components/dashboard/UpcomingTasks';
+import TimeStats from '@/components/dashboard/TimeStats';
 
 const Index = () => {
   const [stats, setStats] = useState({
@@ -11,25 +16,46 @@ const Index = () => {
     totalPropuestas: 0,
     totalTareas: 0,
     proyectosActivos: 0,
-    ingresosPotenciales: 0
+    ingresosPotenciales: 0,
+    tareasPendientes: 0,
+    tareasEnProgreso: 0,
+    tareasCompletadas: 0,
+    tareasVencidas: 0
   });
   const [loading, setLoading] = useState(true);
+  const { user } = useAuth();
 
   useEffect(() => {
     fetchStats();
-  }, []);
+  }, [user]);
 
   const fetchStats = async () => {
+    if (!user) return;
+
     try {
       const [clientesRes, proyectosRes, propuestasRes, tareasRes] = await Promise.all([
-        supabase.from('clientes').select('id', { count: 'exact' }),
-        supabase.from('proyectos').select('id, estado, presupuesto', { count: 'exact' }),
-        supabase.from('propuestas').select('id, monto', { count: 'exact' }),
-        supabase.from('tareas').select('id', { count: 'exact' })
+        supabase.from('clientes').select('id', { count: 'exact' }).eq('user_id', user.id),
+        supabase.from('proyectos').select('id, estado, presupuesto', { count: 'exact' }).eq('user_id', user.id),
+        supabase.from('propuestas').select('id, monto', { count: 'exact' }).eq('user_id', user.id),
+        supabase.from('tareas').select('id, estado, fecha_vencimiento', { count: 'exact' }).eq('user_id', user.id)
       ]);
 
       const proyectosActivos = proyectosRes.data?.filter(p => p.estado === 'en_progreso').length || 0;
       const ingresosPotenciales = propuestasRes.data?.reduce((sum, p) => sum + (p.monto || 0), 0) || 0;
+
+      // Estadísticas de tareas
+      const tareas = tareasRes.data || [];
+      const tareasPendientes = tareas.filter(t => t.estado === 'pendiente').length;
+      const tareasEnProgreso = tareas.filter(t => t.estado === 'en_progreso').length;
+      const tareasCompletadas = tareas.filter(t => t.estado === 'completada').length;
+      
+      // Tareas vencidas (pendientes o en progreso con fecha vencimiento pasada)
+      const hoy = new Date();
+      const tareasVencidas = tareas.filter(t => 
+        (t.estado === 'pendiente' || t.estado === 'en_progreso') && 
+        t.fecha_vencimiento && 
+        new Date(t.fecha_vencimiento) < hoy
+      ).length;
 
       setStats({
         totalClientes: clientesRes.count || 0,
@@ -37,7 +63,11 @@ const Index = () => {
         totalPropuestas: propuestasRes.count || 0,
         totalTareas: tareasRes.count || 0,
         proyectosActivos,
-        ingresosPotenciales
+        ingresosPotenciales,
+        tareasPendientes,
+        tareasEnProgreso,
+        tareasCompletadas,
+        tareasVencidas
       });
     } catch (error) {
       console.error('Error fetching stats:', error);
@@ -106,6 +136,7 @@ const Index = () => {
         <p className="text-xl text-gray-400 font-bold">GESTIÓN BRUTAL DE TU NEGOCIO</p>
       </div>
 
+      {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {statCards.map((card, index) => {
           const Icon = card.icon;
@@ -126,6 +157,18 @@ const Index = () => {
         })}
       </div>
 
+      {/* Dashboard Metrics */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <TasksOverview stats={stats} />
+        <TimeStats />
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <UpcomingTasks />
+        <DashboardChart />
+      </div>
+
+      {/* Action Cards */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-8">
         <Card className="bg-white border-4 border-black shadow-[8px_8px_0px_0px_#ffff00] p-6">
           <h2 className="text-2xl font-black text-black mb-4">ACCIONES RÁPIDAS</h2>
