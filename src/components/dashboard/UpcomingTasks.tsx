@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
@@ -47,7 +46,14 @@ const UpcomingTasks = () => {
         .limit(5);
 
       if (error) throw error;
-      setTareas(data || []);
+      
+      // Cast the prioridad field to the correct type
+      const tareasWithCorrectTypes = (data || []).map(tarea => ({
+        ...tarea,
+        prioridad: tarea.prioridad as 'baja' | 'media' | 'alta' | 'urgente'
+      }));
+      
+      setTareas(tareasWithCorrectTypes);
     } catch (error) {
       console.error('Error fetching upcoming tasks:', error);
     } finally {
