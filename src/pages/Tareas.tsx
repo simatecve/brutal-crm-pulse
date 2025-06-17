@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useTimer } from '@/hooks/useTimer';
@@ -103,6 +102,35 @@ const Tareas = () => {
       setProyectos(data || []);
     } catch (error) {
       console.error('Error fetching proyectos:', error);
+    }
+  };
+
+  const updateTareaField = async (tareaId: string, field: 'estado' | 'prioridad', value: string) => {
+    try {
+      const { error } = await supabase
+        .from('tareas')
+        .update({ [field]: value })
+        .eq('id', tareaId);
+
+      if (error) throw error;
+
+      // Actualizar el estado local
+      setTareas(prev => prev.map(tarea => 
+        tarea.id === tareaId 
+          ? { ...tarea, [field]: value }
+          : tarea
+      ));
+
+      toast({
+        title: "Actualizado",
+        description: `${field === 'estado' ? 'Estado' : 'Prioridad'} actualizada correctamente.`,
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: `No se pudo actualizar la ${field === 'estado' ? 'estado' : 'prioridad'}.`,
+        variant: "destructive",
+      });
     }
   };
 
@@ -222,6 +250,13 @@ const Tareas = () => {
       case 'completada': return 'bg-green-400';
       default: return 'bg-gray-400';
     }
+  };
+
+  const formatTime = (minutes: number) => {
+    if (!minutes) return '0m';
+    const hours = Math.floor(minutes / 60);
+    const mins = minutes % 60;
+    return hours > 0 ? `${hours}h ${mins}m` : `${mins}m`;
   };
 
   const handleStartTimer = async (tareaId: string) => {
@@ -411,19 +446,42 @@ const Tareas = () => {
                   {tarea.proyectos?.nombre || 'Sin proyecto'}
                 </TableCell>
                 <TableCell>
-                  <span className={`${getPrioridadColor(tarea.prioridad)} text-black px-3 py-1 font-black border-2 border-black shadow-[2px_2px_0px_0px_#000000] text-xs`}>
-                    {tarea.prioridad.toUpperCase()}
-                  </span>
+                  <Select 
+                    value={tarea.prioridad} 
+                    onValueChange={(value: 'baja' | 'media' | 'alta' | 'urgente') => 
+                      updateTareaField(tarea.id, 'prioridad', value)}
+                  >
+                    <SelectTrigger className={`${getPrioridadColor(tarea.prioridad)} text-black border-2 border-black shadow-[2px_2px_0px_0px_#000000] w-32 h-8`}>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="baja">BAJA</SelectItem>
+                      <SelectItem value="media">MEDIA</SelectItem>
+                      <SelectItem value="alta">ALTA</SelectItem>
+                      <SelectItem value="urgente">URGENTE</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </TableCell>
                 <TableCell>
-                  <span className={`${getEstadoColor(tarea.estado)} text-black px-3 py-1 font-black border-2 border-black shadow-[2px_2px_0px_0px_#000000] text-xs`}>
-                    {tarea.estado.replace('_', ' ').toUpperCase()}
-                  </span>
+                  <Select 
+                    value={tarea.estado} 
+                    onValueChange={(value: 'pendiente' | 'en_progreso' | 'completada') => 
+                      updateTareaField(tarea.id, 'estado', value)}
+                  >
+                    <SelectTrigger className={`${getEstadoColor(tarea.estado)} text-black border-2 border-black shadow-[2px_2px_0px_0px_#000000] w-36 h-8`}>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="pendiente">PENDIENTE</SelectItem>
+                      <SelectItem value="en_progreso">EN PROGRESO</SelectItem>
+                      <SelectItem value="completada">COMPLETADA</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </TableCell>
                 <TableCell className="font-bold">
                   <div className="flex items-center gap-1">
                     <Clock size={16} />
-                    {tarea.tiempo_registrado || 0}m
+                    {formatTime(tarea.tiempo_registrado || 0)}
                   </div>
                 </TableCell>
                 <TableCell>

@@ -83,6 +83,33 @@ export type Database = {
           },
         ]
       }
+      configuracion_sistema: {
+        Row: {
+          copyright: string
+          created_at: string
+          id: string
+          nombre_sistema: string
+          updated_at: string
+          version: string
+        }
+        Insert: {
+          copyright?: string
+          created_at?: string
+          id?: string
+          nombre_sistema?: string
+          updated_at?: string
+          version?: string
+        }
+        Update: {
+          copyright?: string
+          created_at?: string
+          id?: string
+          nombre_sistema?: string
+          updated_at?: string
+          version?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           created_at: string

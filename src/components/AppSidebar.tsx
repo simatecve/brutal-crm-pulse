@@ -1,7 +1,8 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
+import { supabase } from '@/integrations/supabase/client';
 import { 
   Home, 
   Users, 
@@ -11,14 +12,41 @@ import {
   Clock,
   Menu,
   X,
-  LogOut
+  LogOut,
+  User
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
+interface ConfiguracionSistema {
+  nombre_sistema: string;
+  version: string;
+  copyright: string;
+}
+
 const AppSidebar = () => {
   const [isCollapsed, setIsCollapsed] = useState(false);
+  const [config, setConfig] = useState<ConfiguracionSistema | null>(null);
   const location = useLocation();
-  const { signOut } = useAuth();
+  const { signOut, user } = useAuth();
+
+  useEffect(() => {
+    fetchConfig();
+  }, []);
+
+  const fetchConfig = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('configuracion_sistema')
+        .select('nombre_sistema, version, copyright')
+        .limit(1)
+        .single();
+
+      if (error) throw error;
+      setConfig(data);
+    } catch (error) {
+      console.error('Error fetching config:', error);
+    }
+  };
 
   const menuItems = [
     { icon: Home, label: 'Dashboard', path: '/' },
@@ -30,13 +58,16 @@ const AppSidebar = () => {
   ];
 
   return (
-    <div className={`bg-black border-r-4 border-white transition-all duration-300 ${
+    <div className={`bg-black border-r-4 border-white transition-all duration-300 flex flex-col ${
       isCollapsed ? 'w-16' : 'w-64'
     }`}>
-      <div className="p-4">
+      <div className="p-4 flex-1">
         <div className="flex items-center justify-between mb-8">
-          {!isCollapsed && (
-            <h1 className="text-yellow-400 text-xl font-black">CRM BRUTAL</h1>
+          {!isCollapsed && config && (
+            <div>
+              <h1 className="text-yellow-400 text-xl font-black">{config.nombre_sistema}</h1>
+              <p className="text-white text-xs">{config.version}</p>
+            </div>
           )}
           <Button
             onClick={() => setIsCollapsed(!isCollapsed)}
@@ -69,16 +100,33 @@ const AppSidebar = () => {
             );
           })}
         </nav>
+      </div>
 
-        <div className="mt-8">
-          <Button
-            onClick={signOut}
-            className="w-full bg-red-500 hover:bg-red-400 text-white border-2 border-white shadow-[2px_2px_0px_0px_#ffffff] font-bold"
-          >
-            <LogOut size={20} />
-            {!isCollapsed && <span className="ml-2">SALIR</span>}
-          </Button>
-        </div>
+      {/* User info and logout */}
+      <div className="p-4 border-t-2 border-white">
+        {!isCollapsed && user && (
+          <div className="mb-4 p-3 bg-white border-2 border-black shadow-[2px_2px_0px_0px_#000000]">
+            <div className="flex items-center gap-2">
+              <User size={16} className="text-black" />
+              <div className="flex-1 min-w-0">
+                <p className="text-black font-bold text-sm truncate">{user.email}</p>
+                <p className="text-gray-600 text-xs">Usuario activo</p>
+              </div>
+            </div>
+          </div>
+        )}
+        
+        <Button
+          onClick={signOut}
+          className="w-full bg-red-500 hover:bg-red-400 text-white border-2 border-white shadow-[2px_2px_0px_0px_#ffffff] font-bold"
+        >
+          <LogOut size={20} />
+          {!isCollapsed && <span className="ml-2">SALIR</span>}
+        </Button>
+        
+        {!isCollapsed && config && (
+          <p className="text-gray-400 text-xs mt-2 text-center">{config.copyright}</p>
+        )}
       </div>
     </div>
   );
