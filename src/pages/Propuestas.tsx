@@ -44,7 +44,7 @@ const Propuestas = () => {
     titulo: '',
     descripcion: '',
     monto: '',
-    estado: 'borrador' as const,
+    estado: 'borrador' as 'borrador' | 'enviada' | 'aceptada' | 'rechazada',
     fecha_envio: '',
     fecha_vencimiento: '',
     cliente_id: ''
@@ -67,7 +67,14 @@ const Propuestas = () => {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setPropuestas(data || []);
+      
+      // Type assertion para convertir los datos de la DB
+      const propuestasData = (data || []).map(item => ({
+        ...item,
+        estado: item.estado as 'borrador' | 'enviada' | 'aceptada' | 'rechazada'
+      }));
+      
+      setPropuestas(propuestasData);
     } catch (error) {
       toast({
         title: "Error",
@@ -296,7 +303,8 @@ const Propuestas = () => {
                   <Label htmlFor="estado" className="text-black font-bold">Estado</Label>
                   <Select
                     value={formData.estado}
-                    onValueChange={(value: any) => setFormData({ ...formData, estado: value })}
+                    onValueChange={(value: 'borrador' | 'enviada' | 'aceptada' | 'rechazada') => 
+                      setFormData({ ...formData, estado: value })}
                   >
                     <SelectTrigger className="border-2 border-black">
                       <SelectValue />

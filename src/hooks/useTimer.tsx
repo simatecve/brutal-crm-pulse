@@ -100,7 +100,12 @@ export const TimerProvider = ({ children }: { children: React.ReactNode }) => {
         .single();
 
       if (data && !error) {
-        setActiveSession(data);
+        // Type assertion para convertir el string de la DB al tipo específico
+        const sessionData: TimerSession = {
+          ...data,
+          estado: data.estado as 'activa' | 'pausada' | 'finalizada'
+        };
+        setActiveSession(sessionData);
         setCurrentTime(data.tiempo_transcurrido);
         setIsRunning(data.estado === 'activa');
       }
@@ -143,7 +148,13 @@ export const TimerProvider = ({ children }: { children: React.ReactNode }) => {
 
       if (error) throw error;
 
-      setActiveSession(data);
+      // Type assertion para el nuevo registro
+      const sessionData: TimerSession = {
+        ...data,
+        estado: data.estado as 'activa' | 'pausada' | 'finalizada'
+      };
+
+      setActiveSession(sessionData);
       setCurrentTime(0);
       setIsRunning(true);
       

@@ -47,8 +47,8 @@ const Tareas = () => {
   const [formData, setFormData] = useState({
     titulo: '',
     descripcion: '',
-    estado: 'pendiente' as const,
-    prioridad: 'media' as const,
+    estado: 'pendiente' as 'pendiente' | 'en_progreso' | 'completada',
+    prioridad: 'media' as 'baja' | 'media' | 'alta' | 'urgente',
     fecha_vencimiento: '',
     tiempo_estimado: '',
     proyecto_id: ''
@@ -71,7 +71,15 @@ const Tareas = () => {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setTareas(data || []);
+      
+      // Type assertion para convertir los datos de la DB
+      const tareasData = (data || []).map(item => ({
+        ...item,
+        estado: item.estado as 'pendiente' | 'en_progreso' | 'completada',
+        prioridad: item.prioridad as 'baja' | 'media' | 'alta' | 'urgente'
+      }));
+      
+      setTareas(tareasData);
     } catch (error) {
       toast({
         title: "Error",
@@ -300,7 +308,8 @@ const Tareas = () => {
                   <Label htmlFor="estado" className="text-black font-bold">Estado</Label>
                   <Select
                     value={formData.estado}
-                    onValueChange={(value: any) => setFormData({ ...formData, estado: value })}
+                    onValueChange={(value: 'pendiente' | 'en_progreso' | 'completada') => 
+                      setFormData({ ...formData, estado: value })}
                   >
                     <SelectTrigger className="border-2 border-black">
                       <SelectValue />
@@ -317,7 +326,8 @@ const Tareas = () => {
                   <Label htmlFor="prioridad" className="text-black font-bold">Prioridad</Label>
                   <Select
                     value={formData.prioridad}
-                    onValueChange={(value: any) => setFormData({ ...formData, prioridad: value })}
+                    onValueChange={(value: 'baja' | 'media' | 'alta' | 'urgente') => 
+                      setFormData({ ...formData, prioridad: value })}
                   >
                     <SelectTrigger className="border-2 border-black">
                       <SelectValue />
