@@ -15,6 +15,11 @@ interface Tarea {
   proyectos?: { nombre: string };
 }
 
+interface Proyecto {
+  id: string;
+  nombre: string;
+}
+
 interface SesionTiempo {
   id: string;
   tiempo_transcurrido: number;
@@ -27,21 +32,24 @@ interface SesionTiempo {
 
 const TimeTracker = () => {
   const [tareas, setTareas] = useState<Tarea[]>([]);
+  const [proyectos, setProyectos] = useState<Proyecto[]>([]);
   const [sesiones, setSesiones] = useState<SesionTiempo[]>([]);
   const [selectedTarea, setSelectedTarea] = useState('');
   const [filtroFecha, setFiltroFecha] = useState('');
+  const [filtroProyecto, setFiltroProyecto] = useState('');
   const [loading, setLoading] = useState(true);
   const { user } = useAuth();
   const { activeSession, currentTime, isRunning, startTimer, pauseTimer, resumeTimer, stopTimer } = useTimer();
 
   useEffect(() => {
     fetchTareas();
+    fetchProyectos();
     fetchSesiones();
   }, []);
 
   useEffect(() => {
     fetchSesiones();
-  }, [filtroFecha]);
+  }, [filtroFecha, filtroProyecto]);
 
   const fetchTareas = async () => {
     try {
@@ -60,6 +68,22 @@ const TimeTracker = () => {
       setTareas(data || []);
     } catch (error) {
       console.error('Error fetching tareas:', error);
+    }
+  };
+
+  const fetchProyectos = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('proyectos')
+        .select('id, nombre')
+        .eq('user_id', user?.id)
+        .neq('estado', 'cancelado')
+        .order('nombre');
+
+      if (error) throw error;
+      setProyectos(data || []);
+    } catch (error) {
+      console.error('Error fetching proyectos:', error);
     }
   };
 
@@ -85,6 +109,24 @@ const TimeTracker = () => {
         query = query
           .gte('inicio', fechaInicio.toISOString())
           .lte('inicio', fechaFin.toISOString());
+      }
+
+      if (filtroProyecto) {
+        // Primero obtenemos las tareas del proyecto seleccionado
+        const { data: tareasProyecto } = await supabase
+          .from('tareas')
+          .select('id')
+          .eq('proyecto_id', filtroProyecto);
+        
+        if (tareasProyecto && tareasProyecto.length > 0) {
+          const tareaIds = tareasProyecto.map(t => t.id);
+          query = query.in('tarea_id', tareaIds);
+        } else {
+          // Si no hay tareas para este proyecto, no mostramos sesiones
+          setSesiones([]);
+          setLoading(false);
+          return;
+        }
       }
 
       const { data, error } = await query.limit(50);
@@ -149,6 +191,11 @@ const TimeTracker = () => {
       case 'finalizada': return 'bg-gray-400';
       default: return 'bg-gray-400';
     }
+  };
+
+  const limpiarFiltros = () => {
+    setFiltroFecha('');
+    setFiltroProyecto('');
   };
 
   if (loading) {
@@ -272,7 +319,7 @@ const TimeTracker = () => {
 
       {/* Filtros */}
       <Card className="bg-white border-4 border-black shadow-[8px_8px_0px_0px_#000000] p-4">
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-4 flex-wrap">
           <Filter size={20} className="text-black" />
           <span className="font-black text-black">FILTROS:</span>
           <input
@@ -281,8 +328,20 @@ const TimeTracker = () => {
             onChange={(e) => setFiltroFecha(e.target.value)}
             className="border-2 border-black px-3 py-1 font-bold"
           />
+          <Select value={filtroProyecto} onValueChange={setFiltroProyecto}>
+            <SelectTrigger className="w-48 border-2 border-black">
+              <SelectValue placeholder="Filtrar por proyecto" />
+            </SelectTrigger>
+            <SelectContent>
+              {proyectos.map((proyecto) => (
+                <SelectItem key={proyecto.id} value={proyecto.id}>
+                  {proyecto.nombre}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
           <Button
-            onClick={() => setFiltroFecha('')}
+            onClick={limpiarFiltros}
             className="bg-gray-400 hover:bg-gray-300 text-black font-black border-2 border-black shadow-[2px_2px_0px_0px_#000000] px-4 py-1"
           >
             LIMPIAR
@@ -339,7 +398,7 @@ const TimeTracker = () => {
         <Card className="bg-white border-4 border-black shadow-[8px_8px_0px_0px_#000000] p-8 text-center">
           <Clock size={64} className="mx-auto mb-4 text-gray-400" />
           <h3 className="text-2xl font-black text-black mb-2">NO HAY REGISTROS</h3>
-          <p className="text-gray-600 font-bold">Comienza a trackear tu tiempo</p>
+          <p className="text-gray-600 font-bold">Comienza a trackear tu tiempo o ajusta los filtros</p>
         </Card>
       )}
     </div>

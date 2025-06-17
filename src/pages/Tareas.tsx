@@ -30,6 +30,7 @@ interface Tarea {
   tiempo_registrado: number;
   proyecto_id: string;
   proyectos?: { nombre: string };
+  tiempo_total?: number; // Tiempo total de sesiones
 }
 
 const Tareas = () => {
@@ -71,14 +72,24 @@ const Tareas = () => {
 
       if (error) throw error;
       
-      // Type assertion para convertir los datos de la DB
-      const tareasData = (data || []).map(item => ({
-        ...item,
-        estado: item.estado as 'pendiente' | 'en_progreso' | 'completada',
-        prioridad: item.prioridad as 'baja' | 'media' | 'alta' | 'urgente'
+      // Obtener tiempo total de sesiones para cada tarea
+      const tareasConTiempo = await Promise.all((data || []).map(async (tarea) => {
+        const { data: sesiones } = await supabase
+          .from('sesiones_tiempo')
+          .select('tiempo_transcurrido')
+          .eq('tarea_id', tarea.id);
+        
+        const tiempoTotalSegundos = sesiones?.reduce((total, sesion) => total + (sesion.tiempo_transcurrido || 0), 0) || 0;
+        
+        return {
+          ...tarea,
+          estado: tarea.estado as 'pendiente' | 'en_progreso' | 'completada',
+          prioridad: tarea.prioridad as 'baja' | 'media' | 'alta' | 'urgente',
+          tiempo_total: tiempoTotalSegundos
+        };
       }));
       
-      setTareas(tareasData);
+      setTareas(tareasConTiempo);
     } catch (error) {
       toast({
         title: "Error",
@@ -252,11 +263,19 @@ const Tareas = () => {
     }
   };
 
-  const formatTime = (minutes: number) => {
-    if (!minutes) return '0m';
-    const hours = Math.floor(minutes / 60);
-    const mins = minutes % 60;
-    return hours > 0 ? `${hours}h ${mins}m` : `${mins}m`;
+  const formatTime = (segundos: number) => {
+    if (!segundos) return '0s';
+    const horas = Math.floor(segundos / 3600);
+    const minutos = Math.floor((segundos % 3600) / 60);
+    const segs = segundos % 60;
+    
+    if (horas > 0) {
+      return `${horas}h ${minutos}m ${segs}s`;
+    } else if (minutos > 0) {
+      return `${minutos}m ${segs}s`;
+    } else {
+      return `${segs}s`;
+    }
   };
 
   const handleStartTimer = async (tareaId: string) => {
@@ -429,7 +448,7 @@ const Tareas = () => {
               <TableHead className="font-black text-black">PROYECTO</TableHead>
               <TableHead className="font-black text-black">PRIORIDAD</TableHead>
               <TableHead className="font-black text-black">ESTADO</TableHead>
-              <TableHead className="font-black text-black">TIEMPO</TableHead>
+              <TableHead className="font-black text-black">TIEMPO USADO</TableHead>
               <TableHead className="font-black text-black">ACCIONES</TableHead>
             </TableRow>
           </TableHeader>
@@ -481,7 +500,7 @@ const Tareas = () => {
                 <TableCell className="font-bold">
                   <div className="flex items-center gap-1">
                     <Clock size={16} />
-                    {formatTime(tarea.tiempo_registrado || 0)}
+                    {formatTime(tarea.tiempo_total || 0)}
                   </div>
                 </TableCell>
                 <TableCell>

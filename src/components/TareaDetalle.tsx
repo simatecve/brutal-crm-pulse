@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Card } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
-import { MessageSquare, Send, Clock, User } from 'lucide-react';
+import { MessageSquare, Send, Clock, User, Timer } from 'lucide-react';
 
 interface Tarea {
   id: string;
@@ -27,6 +27,14 @@ interface Comentario {
   user_id: string;
 }
 
+interface SesionTiempo {
+  id: string;
+  tiempo_transcurrido: number;
+  estado: string;
+  inicio: string;
+  fin: string | null;
+}
+
 interface TareaDetalleProps {
   tarea: Tarea;
   onClose: () => void;
@@ -35,6 +43,7 @@ interface TareaDetalleProps {
 
 const TareaDetalle = ({ tarea, onClose, onUpdate }: TareaDetalleProps) => {
   const [comentarios, setComentarios] = useState<Comentario[]>([]);
+  const [sesiones, setSesiones] = useState<SesionTiempo[]>([]);
   const [nuevoComentario, setNuevoComentario] = useState('');
   const [loading, setLoading] = useState(true);
   const { user } = useAuth();
@@ -42,6 +51,7 @@ const TareaDetalle = ({ tarea, onClose, onUpdate }: TareaDetalleProps) => {
 
   useEffect(() => {
     fetchComentarios();
+    fetchSesiones();
   }, [tarea.id]);
 
   const fetchComentarios = async () => {
@@ -56,6 +66,21 @@ const TareaDetalle = ({ tarea, onClose, onUpdate }: TareaDetalleProps) => {
       setComentarios(data || []);
     } catch (error) {
       console.error('Error fetching comentarios:', error);
+    }
+  };
+
+  const fetchSesiones = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('sesiones_tiempo')
+        .select('*')
+        .eq('tarea_id', tarea.id)
+        .order('inicio', { ascending: false });
+
+      if (error) throw error;
+      setSesiones(data || []);
+    } catch (error) {
+      console.error('Error fetching sesiones:', error);
     } finally {
       setLoading(false);
     }
@@ -96,9 +121,37 @@ const TareaDetalle = ({ tarea, onClose, onUpdate }: TareaDetalleProps) => {
     return new Date(dateString).toLocaleString();
   };
 
+  const formatTime = (segundos: number) => {
+    if (!segundos) return '0s';
+    const horas = Math.floor(segundos / 3600);
+    const minutos = Math.floor((segundos % 3600) / 60);
+    const segs = segundos % 60;
+    
+    if (horas > 0) {
+      return `${horas}h ${minutos}m ${segs}s`;
+    } else if (minutos > 0) {
+      return `${minutos}m ${segs}s`;
+    } else {
+      return `${segs}s`;
+    }
+  };
+
+  const getTiempoTotal = () => {
+    return sesiones.reduce((total, sesion) => total + (sesion.tiempo_transcurrido || 0), 0);
+  };
+
+  const getEstadoColor = (estado: string) => {
+    switch (estado) {
+      case 'activa': return 'bg-green-400';
+      case 'pausada': return 'bg-yellow-400';
+      case 'finalizada': return 'bg-gray-400';
+      default: return 'bg-gray-400';
+    }
+  };
+
   return (
     <Dialog open={true} onOpenChange={onClose}>
-      <DialogContent className="bg-white border-4 border-black shadow-[8px_8px_0px_0px_#000000] max-w-4xl max-h-[80vh] overflow-y-auto">
+      <DialogContent className="bg-white border-4 border-black shadow-[8px_8px_0px_0px_#000000] max-w-5xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="text-2xl font-black text-black flex items-center gap-2">
             <MessageSquare size={24} />
@@ -118,7 +171,7 @@ const TareaDetalle = ({ tarea, onClose, onUpdate }: TareaDetalleProps) => {
               <div>Prioridad: {tarea.prioridad.toUpperCase()}</div>
               <div className="flex items-center gap-1">
                 <Clock size={16} />
-                Tiempo registrado: {tarea.tiempo_registrado || 0} min
+                Tiempo total: {formatTime(getTiempoTotal())}
               </div>
               <div>
                 Tiempo estimado: {tarea.tiempo_estimado || 0} min
@@ -131,6 +184,43 @@ const TareaDetalle = ({ tarea, onClose, onUpdate }: TareaDetalleProps) => {
             </div>
           </Card>
 
+          {/* Resumen de tiempo */}
+          <div>
+            <h4 className="text-lg font-black text-white mb-4 flex items-center gap-2">
+              <Timer size={20} />
+              RESUMEN DE TIEMPO ({sesiones.length} sesiones)
+            </h4>
+
+            <div className="space-y-3 max-h-40 overflow-y-auto mb-4">
+              {loading ? (
+                <div className="text-center text-gray-400 font-bold">Cargando sesiones...</div>
+              ) : sesiones.length === 0 ? (
+                <Card className="bg-gray-100 border-2 border-black p-4 text-center">
+                  <p className="text-black font-bold">No hay sesiones de tiempo registradas</p>
+                </Card>
+              ) : (
+                sesiones.map((sesion) => (
+                  <Card key={sesion.id} className="bg-white border-2 border-black p-3">
+                    <div className="flex justify-between items-center">
+                      <div>
+                        <p className="text-black font-bold">
+                          Duración: {formatTime(sesion.tiempo_transcurrido || 0)}
+                        </p>
+                        <p className="text-gray-600 text-xs font-bold">
+                          Inicio: {formatDate(sesion.inicio)}
+                          {sesion.fin && ` - Fin: ${formatDate(sesion.fin)}`}
+                        </p>
+                      </div>
+                      <span className={`${getEstadoColor(sesion.estado)} text-black px-3 py-1 font-black border-2 border-black shadow-[2px_2px_0px_0px_#000000] text-xs`}>
+                        {sesion.estado.toUpperCase()}
+                      </span>
+                    </div>
+                  </Card>
+                ))
+              )}
+            </div>
+          </div>
+
           {/* Comentarios */}
           <div>
             <h4 className="text-lg font-black text-white mb-4 flex items-center gap-2">
@@ -139,9 +229,7 @@ const TareaDetalle = ({ tarea, onClose, onUpdate }: TareaDetalleProps) => {
             </h4>
 
             <div className="space-y-3 max-h-60 overflow-y-auto mb-4">
-              {loading ? (
-                <div className="text-center text-gray-400 font-bold">Cargando comentarios...</div>
-              ) : comentarios.length === 0 ? (
+              {comentarios.length === 0 ? (
                 <Card className="bg-gray-100 border-2 border-black p-4 text-center">
                   <p className="text-black font-bold">No hay comentarios aún</p>
                 </Card>
