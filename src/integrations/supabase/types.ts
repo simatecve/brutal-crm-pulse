@@ -48,6 +48,41 @@ export type Database = {
         }
         Relationships: []
       }
+      comentarios_tareas: {
+        Row: {
+          comentario: string
+          created_at: string
+          id: string
+          tarea_id: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          comentario: string
+          created_at?: string
+          id?: string
+          tarea_id?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          comentario?: string
+          created_at?: string
+          id?: string
+          tarea_id?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "comentarios_tareas_tarea_id_fkey"
+            columns: ["tarea_id"]
+            isOneToOne: false
+            referencedRelation: "tareas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           created_at: string
@@ -175,6 +210,47 @@ export type Database = {
           },
         ]
       }
+      sesiones_tiempo: {
+        Row: {
+          created_at: string
+          estado: string | null
+          fin: string | null
+          id: string
+          inicio: string
+          tarea_id: string | null
+          tiempo_transcurrido: number | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          estado?: string | null
+          fin?: string | null
+          id?: string
+          inicio?: string
+          tarea_id?: string | null
+          tiempo_transcurrido?: number | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          estado?: string | null
+          fin?: string | null
+          id?: string
+          inicio?: string
+          tarea_id?: string | null
+          tiempo_transcurrido?: number | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sesiones_tiempo_tarea_id_fkey"
+            columns: ["tarea_id"]
+            isOneToOne: false
+            referencedRelation: "tareas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       tareas: {
         Row: {
           created_at: string
@@ -185,6 +261,7 @@ export type Database = {
           prioridad: string | null
           proyecto_id: string | null
           tiempo_estimado: number | null
+          tiempo_registrado: number | null
           titulo: string
           updated_at: string
           user_id: string
@@ -198,6 +275,7 @@ export type Database = {
           prioridad?: string | null
           proyecto_id?: string | null
           tiempo_estimado?: number | null
+          tiempo_registrado?: number | null
           titulo: string
           updated_at?: string
           user_id: string
@@ -211,6 +289,7 @@ export type Database = {
           prioridad?: string | null
           proyecto_id?: string | null
           tiempo_estimado?: number | null
+          tiempo_registrado?: number | null
           titulo?: string
           updated_at?: string
           user_id?: string
