@@ -1,5 +1,4 @@
-
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
@@ -10,6 +9,7 @@ import TareaDetalle from '@/components/TareaDetalle';
 import TareaForm from '@/components/tareas/TareaForm';
 import TareasTable from '@/components/tareas/TareasTable';
 import TareasEmptyState from '@/components/tareas/TareasEmptyState';
+import TareasFilters from '@/components/tareas/TareasFilters';
 
 interface Tarea {
   id: string;
@@ -23,6 +23,7 @@ interface Tarea {
   proyecto_id: string;
   proyectos?: { nombre: string };
   tiempo_total?: number;
+  created_at: string;
 }
 
 const Tareas = () => {
@@ -31,12 +32,96 @@ const Tareas = () => {
   const [editingTarea, setEditingTarea] = useState<Tarea | null>(null);
   const [selectedTarea, setSelectedTarea] = useState<Tarea | null>(null);
   const [loading, setLoading] = useState(true);
+  
+  // Estados para filtros y ordenamiento
+  const [filtroEstado, setFiltroEstado] = useState('todos');
+  const [filtroPrioridad, setFiltroPrioridad] = useState('todos');
+  const [ordenarPor, setOrdenarPor] = useState('created_at');
+  const [direccionOrden, setDireccionOrden] = useState<'asc' | 'desc'>('desc');
+  
   const { user } = useAuth();
   const { toast } = useToast();
 
   useEffect(() => {
     fetchTareas();
   }, []);
+
+  // Función para obtener el valor numérico de prioridad para ordenamiento
+  const getPrioridadNumero = (prioridad: string) => {
+    switch (prioridad) {
+      case 'baja': return 1;
+      case 'media': return 2;
+      case 'alta': return 3;
+      case 'urgente': return 4;
+      default: return 0;
+    }
+  };
+
+  // Función para obtener el valor numérico de estado para ordenamiento
+  const getEstadoNumero = (estado: string) => {
+    switch (estado) {
+      case 'pendiente': return 1;
+      case 'en_progreso': return 2;
+      case 'completada': return 3;
+      default: return 0;
+    }
+  };
+
+  // Memo para tareas filtradas y ordenadas
+  const tareasFiltradas = useMemo(() => {
+    let filtradas = [...tareas];
+
+    // Aplicar filtro de estado
+    if (filtroEstado !== 'todos') {
+      filtradas = filtradas.filter(tarea => tarea.estado === filtroEstado);
+    }
+
+    // Aplicar filtro de prioridad
+    if (filtroPrioridad !== 'todos') {
+      filtradas = filtradas.filter(tarea => tarea.prioridad === filtroPrioridad);
+    }
+
+    // Aplicar ordenamiento
+    filtradas.sort((a, b) => {
+      let valorA: any, valorB: any;
+
+      switch (ordenarPor) {
+        case 'prioridad':
+          valorA = getPrioridadNumero(a.prioridad);
+          valorB = getPrioridadNumero(b.prioridad);
+          break;
+        case 'estado':
+          valorA = getEstadoNumero(a.estado);
+          valorB = getEstadoNumero(b.estado);
+          break;
+        case 'tiempo_total':
+          valorA = a.tiempo_total || 0;
+          valorB = b.tiempo_total || 0;
+          break;
+        case 'fecha_vencimiento':
+          valorA = a.fecha_vencimiento ? new Date(a.fecha_vencimiento).getTime() : 0;
+          valorB = b.fecha_vencimiento ? new Date(b.fecha_vencimiento).getTime() : 0;
+          break;
+        case 'titulo':
+          valorA = a.titulo.toLowerCase();
+          valorB = b.titulo.toLowerCase();
+          break;
+        case 'created_at':
+        default:
+          valorA = new Date(a.created_at).getTime();
+          valorB = new Date(b.created_at).getTime();
+          break;
+      }
+
+      if (direccionOrden === 'asc') {
+        return valorA > valorB ? 1 : valorA < valorB ? -1 : 0;
+      } else {
+        return valorA < valorB ? 1 : valorA > valorB ? -1 : 0;
+      }
+    });
+
+    return filtradas;
+  }, [tareas, filtroEstado, filtroPrioridad, ordenarPor, direccionOrden]);
 
   const fetchTareas = async () => {
     try {
@@ -132,11 +217,28 @@ const Tareas = () => {
         </Dialog>
       </div>
 
-      {tareas.length === 0 ? (
-        <TareasEmptyState />
+      <TareasFilters
+        filtroEstado={filtroEstado}
+        filtroPrioridad={filtroPrioridad}
+        ordenarPor={ordenarPor}
+        direccionOrden={direccionOrden}
+        onFiltroEstadoChange={setFiltroEstado}
+        onFiltroPrioridadChange={setFiltroPrioridad}
+        onOrdenarPorChange={setOrdenarPor}
+        onDireccionOrdenChange={setDireccionOrden}
+      />
+
+      {tareasFiltradas.length === 0 ? (
+        tareas.length === 0 ? (
+          <TareasEmptyState />
+        ) : (
+          <div className="text-center text-white text-xl font-black">
+            NO SE ENCONTRARON TAREAS CON LOS FILTROS APLICADOS
+          </div>
+        )
       ) : (
         <TareasTable
-          tareas={tareas}
+          tareas={tareasFiltradas}
           onEdit={handleEdit}
           onDelete={handleDelete}
           onSelectTarea={setSelectedTarea}
