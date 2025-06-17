@@ -1,3 +1,4 @@
+
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -17,6 +18,9 @@ import Proyectos from "./pages/Proyectos";
 import Propuestas from "./pages/Propuestas";
 import Tareas from "./pages/Tareas";
 import TimeTracker from "./pages/TimeTracker";
+import Reportes from "./pages/Reportes";
+import Configuracion from "./pages/Configuracion";
+import Kanban from "./pages/Kanban";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -43,7 +47,10 @@ const App = () => (
                           <Route path="/proyectos" element={<Proyectos />} />
                           <Route path="/propuestas" element={<Propuestas />} />
                           <Route path="/tareas" element={<Tareas />} />
+                          <Route path="/kanban" element={<Kanban />} />
                           <Route path="/time-tracker" element={<TimeTracker />} />
+                          <Route path="/reportes" element={<Reportes />} />
+                          <Route path="/configuracion" element={<Configuracion />} />
                           <Route path="*" element={<NotFound />} />
                         </Routes>
                       </main>
