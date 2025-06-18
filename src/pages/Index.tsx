@@ -1,9 +1,11 @@
 
 import { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { Card } from '@/components/ui/card';
-import { Users, FolderOpen, FileText, CheckSquare, Clock, DollarSign, AlertTriangle, TrendingUp } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Users, FolderOpen, FileText, CheckSquare, Clock, DollarSign, AlertTriangle, TrendingUp, Settings, BarChart3, Kanban, Target, Bell } from 'lucide-react';
 import DashboardChart from '@/components/dashboard/DashboardChart';
 import TasksOverview from '@/components/dashboard/TasksOverview';
 import UpcomingTasks from '@/components/dashboard/UpcomingTasks';
@@ -168,41 +170,150 @@ const Index = () => {
         <DashboardChart />
       </div>
 
-      {/* Action Cards */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-8">
+      {/* Action Cards - Nuevas funcionalidades destacadas */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-8">
         <Card className="bg-white border-4 border-black shadow-[8px_8px_0px_0px_#ffff00] p-6">
-          <h2 className="text-2xl font-black text-black mb-4">ACCIONES RÁPIDAS</h2>
+          <h2 className="text-2xl font-black text-black mb-4">⚡ GESTIÓN DE TIEMPO</h2>
           <div className="space-y-3">
-            <button className="w-full bg-yellow-400 hover:bg-yellow-300 text-black font-black py-3 px-4 border-4 border-black shadow-[4px_4px_0px_0px_#000000] hover:shadow-[2px_2px_0px_0px_#000000] transition-all">
-              NUEVO CLIENTE
-            </button>
-            <button className="w-full bg-green-400 hover:bg-green-300 text-black font-black py-3 px-4 border-4 border-black shadow-[4px_4px_0px_0px_#000000] hover:shadow-[2px_2px_0px_0px_#000000] transition-all">
-              NUEVO PROYECTO
-            </button>
-            <button className="w-full bg-pink-400 hover:bg-pink-300 text-black font-black py-3 px-4 border-4 border-black shadow-[4px_4px_0px_0px_#000000] hover:shadow-[2px_2px_0px_0px_#000000] transition-all">
-              NUEVA PROPUESTA
-            </button>
+            <Link to="/time-tracker">
+              <Button className="w-full bg-yellow-400 hover:bg-yellow-300 text-black font-black py-3 px-4 border-4 border-black shadow-[4px_4px_0px_0px_#000000] hover:shadow-[2px_2px_0px_0px_#000000] transition-all">
+                <Clock className="mr-2" size={20} />
+                TIME TRACKER
+              </Button>
+            </Link>
+            <Link to="/kanban">
+              <Button className="w-full bg-blue-400 hover:bg-blue-300 text-black font-black py-3 px-4 border-4 border-black shadow-[4px_4px_0px_0px_#000000] hover:shadow-[2px_2px_0px_0px_#000000] transition-all">
+                <Kanban className="mr-2" size={20} />
+                VISTA KANBAN
+              </Button>
+            </Link>
+            <Link to="/configuracion">
+              <Button className="w-full bg-purple-400 hover:bg-purple-300 text-black font-black py-3 px-4 border-4 border-black shadow-[4px_4px_0px_0px_#000000] hover:shadow-[2px_2px_0px_0px_#000000] transition-all">
+                <Target className="mr-2" size={20} />
+                POMODORO & OBJETIVOS
+              </Button>
+            </Link>
+          </div>
+        </Card>
+
+        <Card className="bg-white border-4 border-black shadow-[8px_8px_0px_0px_#00ff00] p-6">
+          <h2 className="text-2xl font-black text-black mb-4">📊 ANÁLISIS</h2>
+          <div className="space-y-3">
+            <Link to="/reportes">
+              <Button className="w-full bg-green-400 hover:bg-green-300 text-black font-black py-3 px-4 border-4 border-black shadow-[4px_4px_0px_0px_#000000] hover:shadow-[2px_2px_0px_0px_#000000] transition-all">
+                <BarChart3 className="mr-2" size={20} />
+                REPORTES AVANZADOS
+              </Button>
+            </Link>
+            <Button className="w-full bg-cyan-400 hover:bg-cyan-300 text-black font-black py-3 px-4 border-4 border-black shadow-[4px_4px_0px_0px_#000000] hover:shadow-[2px_2px_0px_0px_#000000] transition-all">
+              <TrendingUp className="mr-2" size={20} />
+              PRODUCTIVIDAD SEMANAL
+            </Button>
+            <Button className="w-full bg-indigo-400 hover:bg-indigo-300 text-black font-black py-3 px-4 border-4 border-black shadow-[4px_4px_0px_0px_#000000] hover:shadow-[2px_2px_0px_0px_#000000] transition-all">
+              <DollarSign className="mr-2" size={20} />
+              ANÁLISIS DE INGRESOS
+            </Button>
           </div>
         </Card>
 
         <Card className="bg-white border-4 border-black shadow-[8px_8px_0px_0px_#ff00ff] p-6">
-          <h2 className="text-2xl font-black text-black mb-4">ESTADO DEL SISTEMA</h2>
+          <h2 className="text-2xl font-black text-black mb-4">⚙️ CONFIGURACIÓN</h2>
           <div className="space-y-3">
-            <div className="flex justify-between items-center py-2 border-b-2 border-black">
-              <span className="font-bold">BASE DE DATOS</span>
-              <span className="bg-green-400 text-black px-3 py-1 font-black border-2 border-black">ACTIVA</span>
-            </div>
-            <div className="flex justify-between items-center py-2 border-b-2 border-black">
-              <span className="font-bold">AUTENTICACIÓN</span>
-              <span className="bg-green-400 text-black px-3 py-1 font-black border-2 border-black">ACTIVA</span>
-            </div>
-            <div className="flex justify-between items-center py-2">
-              <span className="font-bold">SISTEMA CRM</span>
-              <span className="bg-green-400 text-black px-3 py-1 font-black border-2 border-black">OPERATIVO</span>
-            </div>
+            <Link to="/configuracion">
+              <Button className="w-full bg-pink-400 hover:bg-pink-300 text-black font-black py-3 px-4 border-4 border-black shadow-[4px_4px_0px_0px_#000000] hover:shadow-[2px_2px_0px_0px_#000000] transition-all">
+                <Settings className="mr-2" size={20} />
+                CONFIGURACIÓN AVANZADA
+              </Button>
+            </Link>
+            <Button className="w-full bg-orange-400 hover:bg-orange-300 text-black font-black py-3 px-4 border-4 border-black shadow-[4px_4px_0px_0px_#000000] hover:shadow-[2px_2px_0px_0px_#000000] transition-all">
+              <Bell className="mr-2" size={20} />
+              NOTIFICACIONES ACTIVAS
+            </Button>
+            <Button className="w-full bg-red-400 hover:bg-red-300 text-black font-black py-3 px-4 border-4 border-black shadow-[4px_4px_0px_0px_#000000] hover:shadow-[2px_2px_0px_0px_#000000] transition-all">
+              <AlertTriangle className="mr-2" size={20} />
+              MODO OSCURO/CLARO
+            </Button>
           </div>
         </Card>
       </div>
+
+      {/* Estado del Sistema actualizado */}
+      <Card className="bg-white border-4 border-black shadow-[8px_8px_0px_0px_#000000] p-6">
+        <h2 className="text-2xl font-black text-black mb-4">🚀 FUNCIONALIDADES DISPONIBLES</h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="space-y-2">
+            <h3 className="font-black text-black">GESTIÓN DE TIEMPO</h3>
+            <div className="space-y-1 text-sm">
+              <div className="flex justify-between items-center py-1">
+                <span className="font-bold">Time Tracker</span>
+                <span className="bg-green-400 text-black px-2 py-1 font-black text-xs border border-black">ACTIVO</span>
+              </div>
+              <div className="flex justify-between items-center py-1">
+                <span className="font-bold">Técnica Pomodoro</span>
+                <span className="bg-green-400 text-black px-2 py-1 font-black text-xs border border-black">ACTIVO</span>
+              </div>
+              <div className="flex justify-between items-center py-1">
+                <span className="font-bold">Recordatorios</span>
+                <span className="bg-green-400 text-black px-2 py-1 font-black text-xs border border-black">ACTIVO</span>
+              </div>
+            </div>
+          </div>
+          
+          <div className="space-y-2">
+            <h3 className="font-black text-black">VISTAS Y REPORTES</h3>
+            <div className="space-y-1 text-sm">
+              <div className="flex justify-between items-center py-1">
+                <span className="font-bold">Vista Kanban</span>
+                <span className="bg-green-400 text-black px-2 py-1 font-black text-xs border border-black">ACTIVO</span>
+              </div>
+              <div className="flex justify-between items-center py-1">
+                <span className="font-bold">Reportes PDF/Excel</span>
+                <span className="bg-green-400 text-black px-2 py-1 font-black text-xs border border-black">ACTIVO</span>
+              </div>
+              <div className="flex justify-between items-center py-1">
+                <span className="font-bold">Gráficos Productividad</span>
+                <span className="bg-green-400 text-black px-2 py-1 font-black text-xs border border-black">ACTIVO</span>
+              </div>
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <h3 className="font-black text-black">CONFIGURACIÓN</h3>
+            <div className="space-y-1 text-sm">
+              <div className="flex justify-between items-center py-1">
+                <span className="font-bold">Objetivos Personalizados</span>
+                <span className="bg-green-400 text-black px-2 py-1 font-black text-xs border border-black">ACTIVO</span>
+              </div>
+              <div className="flex justify-between items-center py-1">
+                <span className="font-bold">Estados Personalizados</span>
+                <span className="bg-green-400 text-black px-2 py-1 font-black text-xs border border-black">ACTIVO</span>
+              </div>
+              <div className="flex justify-between items-center py-1">
+                <span className="font-bold">Modo Oscuro/Claro</span>
+                <span className="bg-green-400 text-black px-2 py-1 font-black text-xs border border-black">ACTIVO</span>
+              </div>
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <h3 className="font-black text-black">SISTEMA</h3>
+            <div className="space-y-1 text-sm">
+              <div className="flex justify-between items-center py-1">
+                <span className="font-bold">Notificaciones</span>
+                <span className="bg-green-400 text-black px-2 py-1 font-black text-xs border border-black">ACTIVO</span>
+              </div>
+              <div className="flex justify-between items-center py-1">
+                <span className="font-bold">Drag & Drop</span>
+                <span className="bg-green-400 text-black px-2 py-1 font-black text-xs border border-black">ACTIVO</span>
+              </div>
+              <div className="flex justify-between items-center py-1">
+                <span className="font-bold">Categorías Tiempo</span>
+                <span className="bg-green-400 text-black px-2 py-1 font-black text-xs border border-black">ACTIVO</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </Card>
     </div>
   );
 };

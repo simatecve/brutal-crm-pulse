@@ -10,10 +10,13 @@ import {
   FileText, 
   CheckSquare, 
   Clock,
+  BarChart3,
+  Settings,
   Menu,
   X,
   LogOut,
-  User
+  User,
+  Kanban
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
@@ -54,7 +57,10 @@ const AppSidebar = () => {
     { icon: FolderOpen, label: 'Proyectos', path: '/proyectos' },
     { icon: FileText, label: 'Propuestas', path: '/propuestas' },
     { icon: CheckSquare, label: 'Tareas', path: '/tareas' },
+    { icon: Kanban, label: 'Kanban', path: '/kanban' },
     { icon: Clock, label: 'Time Tracker', path: '/time-tracker' },
+    { icon: BarChart3, label: 'Reportes', path: '/reportes' },
+    { icon: Settings, label: 'Configuración', path: '/configuracion' },
   ];
 
   return (
