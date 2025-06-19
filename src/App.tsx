@@ -21,6 +21,7 @@ import TimeTracker from "./pages/TimeTracker";
 import Reportes from "./pages/Reportes";
 import Configuracion from "./pages/Configuracion";
 import Kanban from "./pages/Kanban";
+import Sugerencias from "./pages/Sugerencias";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -50,6 +51,7 @@ const App = () => (
                           <Route path="/kanban" element={<Kanban />} />
                           <Route path="/time-tracker" element={<TimeTracker />} />
                           <Route path="/reportes" element={<Reportes />} />
+                          <Route path="/sugerencias" element={<Sugerencias />} />
                           <Route path="/configuracion" element={<Configuracion />} />
                           <Route path="*" element={<NotFound />} />
                         </Routes>

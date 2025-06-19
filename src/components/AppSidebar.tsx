@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
@@ -16,7 +15,8 @@ import {
   X,
   LogOut,
   User,
-  Kanban
+  Kanban,
+  MessageSquare
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
@@ -60,6 +60,7 @@ const AppSidebar = () => {
     { icon: Kanban, label: 'Kanban', path: '/kanban' },
     { icon: Clock, label: 'Time Tracker', path: '/time-tracker' },
     { icon: BarChart3, label: 'Reportes', path: '/reportes' },
+    { icon: MessageSquare, label: 'Sugerencias', path: '/sugerencias' },
     { icon: Settings, label: 'Configuración', path: '/configuracion' },
   ];
 
@@ -108,7 +109,6 @@ const AppSidebar = () => {
         </nav>
       </div>
 
-      {/* User info and logout */}
       <div className="p-4 border-t-2 border-white">
         {!isCollapsed && user && (
           <div className="mb-4 p-3 bg-white border-2 border-black shadow-[2px_2px_0px_0px_#000000]">
