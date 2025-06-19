@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
@@ -37,7 +36,7 @@ const Sugerencias = () => {
   const fetchSugerencias = async () => {
     try {
       const { data, error } = await supabase
-        .from('sugerencias' as any)
+        .from('sugerencias')
         .select('*')
         .eq('user_id', user?.id)
         .order('created_at', { ascending: false });
@@ -70,7 +69,7 @@ const Sugerencias = () => {
 
     try {
       const { error } = await supabase
-        .from('sugerencias' as any)
+        .from('sugerencias')
         .insert([{ 
           ...formData, 
           user_id: user?.id 

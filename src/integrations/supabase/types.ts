@@ -278,6 +278,39 @@ export type Database = {
           },
         ]
       }
+      sugerencias: {
+        Row: {
+          categoria: string
+          created_at: string
+          descripcion: string
+          estado: string
+          id: string
+          titulo: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          categoria?: string
+          created_at?: string
+          descripcion: string
+          estado?: string
+          id?: string
+          titulo: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          categoria?: string
+          created_at?: string
+          descripcion?: string
+          estado?: string
+          id?: string
+          titulo?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       tareas: {
         Row: {
           created_at: string
