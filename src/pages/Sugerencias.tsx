@@ -37,7 +37,7 @@ const Sugerencias = () => {
   const fetchSugerencias = async () => {
     try {
       const { data, error } = await supabase
-        .from('sugerencias')
+        .from('sugerencias' as any)
         .select('*')
         .eq('user_id', user?.id)
         .order('created_at', { ascending: false });
@@ -70,7 +70,7 @@ const Sugerencias = () => {
 
     try {
       const { error } = await supabase
-        .from('sugerencias')
+        .from('sugerencias' as any)
         .insert([{ 
           ...formData, 
           user_id: user?.id 
