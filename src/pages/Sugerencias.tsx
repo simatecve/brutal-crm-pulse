@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
@@ -8,15 +9,9 @@ import { Card } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from '@/hooks/use-toast';
 import { Plus, MessageSquare, Bug, Lightbulb, Sparkles, FileText } from 'lucide-react';
+import { Tables } from '@/integrations/supabase/types';
 
-interface Sugerencia {
-  id: string;
-  titulo: string;
-  descripcion: string;
-  categoria: 'bug' | 'mejora' | 'nueva_funcionalidad' | 'general';
-  estado: 'pendiente' | 'en_revision' | 'implementada' | 'rechazada';
-  created_at: string;
-}
+type Sugerencia = Tables<'sugerencias'>;
 
 const Sugerencias = () => {
   const [sugerencias, setSugerencias] = useState<Sugerencia[]>([]);
