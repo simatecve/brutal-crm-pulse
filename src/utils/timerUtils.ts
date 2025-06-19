@@ -1,19 +1,20 @@
 
 import { TimerState } from '@/types/timer';
 
-export const saveTimerState = (activeSession: any, currentTime: number, isRunning: boolean) => {
+export const saveTimerState = (activeSession: any, currentTime: number, isRunning: boolean, startTime?: number | null) => {
   if (activeSession) {
     localStorage.setItem('activeTimer', JSON.stringify({
       session: activeSession,
       currentTime,
-      isRunning
+      isRunning,
+      startTime: isRunning ? startTime : null
     }));
   } else {
     localStorage.removeItem('activeTimer');
   }
 };
 
-export const loadTimerState = (): TimerState | null => {
+export const loadTimerState = (): (TimerState & { startTime?: number | null }) | null => {
   const saved = localStorage.getItem('activeTimer');
   if (saved) {
     try {

@@ -21,4 +21,5 @@ export interface TimerState {
   session: TimerSession;
   currentTime: number;
   isRunning: boolean;
+  startTime?: number | null;
 }
