@@ -4,7 +4,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
 import { TimerContext } from '@/context/TimerContext';
 import { TimerSession } from '@/types/timer';
-import { saveTimerState, loadTimerState, shouldSaveProgress } from '@/utils/timerUtils';
+import { saveTimerState, loadTimerState } from '@/utils/timerUtils';
 import { 
   loadActiveSession, 
   saveProgress, 
@@ -17,58 +17,33 @@ export const TimerProvider = ({ children }: { children: React.ReactNode }) => {
   const [activeSession, setActiveSession] = useState<TimerSession | null>(null);
   const [currentTime, setCurrentTime] = useState(0);
   const [isRunning, setIsRunning] = useState(false);
-  const [startTime, setStartTime] = useState<number | null>(null);
+  const [sessionStartTime, setSessionStartTime] = useState<number | null>(null);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
   const lastSaveRef = useRef<number>(0);
   const { user } = useAuth();
   const { toast } = useToast();
 
-  // Load active session only once when user is available
+  // Load active session and restore state on mount
   useEffect(() => {
     if (user && !activeSession) {
-      loadActiveSessionData();
+      loadInitialState();
     }
   }, [user]);
 
-  // Load saved state from localStorage only once on mount
+  // Main timer interval
   useEffect(() => {
-    if (user) {
-      const saved = loadTimerState();
-      if (saved) {
-        setActiveSession(saved.session);
-        
-        if (saved.isRunning && saved.startTime) {
-          // Recalculate time based on actual elapsed time
-          const now = Date.now();
-          const elapsed = Math.floor((now - saved.startTime) / 1000);
-          const totalTime = saved.session.tiempo_transcurrido + elapsed;
-          
-          setCurrentTime(totalTime);
-          setStartTime(saved.startTime);
-          setIsRunning(true);
-        } else {
-          setCurrentTime(saved.currentTime);
-          setIsRunning(false);
-          setStartTime(null);
-        }
-      }
-    }
-  }, [user]);
-
-  // Main timer interval - only runs when timer is active
-  useEffect(() => {
-    if (isRunning && activeSession && startTime) {
+    if (isRunning && sessionStartTime) {
       intervalRef.current = setInterval(() => {
         const now = Date.now();
-        const elapsed = Math.floor((now - startTime) / 1000);
-        const totalTime = activeSession.tiempo_transcurrido + elapsed;
+        const totalElapsed = Math.floor((now - sessionStartTime) / 1000);
+        setCurrentTime(totalElapsed);
         
-        setCurrentTime(totalTime);
-        
-        // Save progress periodically (every 30 seconds)
-        if (shouldSaveProgress(totalTime) && totalTime !== lastSaveRef.current) {
-          lastSaveRef.current = totalTime;
-          saveProgress(activeSession.id, totalTime);
+        // Auto-save every 30 seconds
+        if (totalElapsed > 0 && totalElapsed % 30 === 0 && totalElapsed !== lastSaveRef.current) {
+          lastSaveRef.current = totalElapsed;
+          if (activeSession) {
+            saveProgress(activeSession.id, totalElapsed);
+          }
         }
       }, 1000);
     } else {
@@ -84,31 +59,27 @@ export const TimerProvider = ({ children }: { children: React.ReactNode }) => {
         intervalRef.current = null;
       }
     };
-  }, [isRunning, activeSession?.id, startTime]);
+  }, [isRunning, sessionStartTime, activeSession?.id]);
 
-  // Save to localStorage when state changes (debounced)
+  // Save state to localStorage when timer state changes
   useEffect(() => {
-    if (activeSession) {
-      const timeoutId = setTimeout(() => {
-        saveTimerState({
-          ...activeSession,
-          tiempo_transcurrido: currentTime
-        }, currentTime, isRunning, startTime);
-      }, 500); // Debounce saves
-
-      return () => clearTimeout(timeoutId);
+    if (activeSession && sessionStartTime) {
+      saveTimerState({
+        session: activeSession,
+        sessionStartTime,
+        isRunning
+      });
     }
-  }, [activeSession, currentTime, isRunning, startTime]);
+  }, [activeSession, sessionStartTime, isRunning]);
 
-  // Handle visibility change (tab switching)
+  // Handle tab visibility changes
   useEffect(() => {
     const handleVisibilityChange = () => {
-      if (!document.hidden && isRunning && activeSession && startTime) {
-        // Recalculate time when tab becomes visible again
+      if (!document.hidden && isRunning && sessionStartTime) {
+        // Recalculate current time when tab becomes visible
         const now = Date.now();
-        const elapsed = Math.floor((now - startTime) / 1000);
-        const totalTime = activeSession.tiempo_transcurrido + elapsed;
-        setCurrentTime(totalTime);
+        const totalElapsed = Math.floor((now - sessionStartTime) / 1000);
+        setCurrentTime(totalElapsed);
       }
     };
 
@@ -119,31 +90,40 @@ export const TimerProvider = ({ children }: { children: React.ReactNode }) => {
       document.removeEventListener('visibilitychange', handleVisibilityChange);
       window.removeEventListener('focus', handleVisibilityChange);
     };
-  }, [isRunning, activeSession, startTime]);
+  }, [isRunning, sessionStartTime]);
 
-  const loadActiveSessionData = async () => {
+  const loadInitialState = async () => {
     if (!user?.id) return;
     
     try {
-      const session = await loadActiveSession(user.id);
-      if (session) {
-        setActiveSession(session);
-        setCurrentTime(session.tiempo_transcurrido);
+      // First try to load from localStorage
+      const savedState = loadTimerState();
+      if (savedState && savedState.session && savedState.sessionStartTime) {
+        setActiveSession(savedState.session);
+        setSessionStartTime(savedState.sessionStartTime);
+        setIsRunning(savedState.isRunning);
         
-        if (session.estado === 'activa') {
-          // If the session is active, calculate start time based on stored time
-          const now = Date.now();
-          const calculatedStartTime = now - (session.tiempo_transcurrido * 1000);
-          
-          setStartTime(calculatedStartTime);
-          setIsRunning(true);
-        } else {
-          setIsRunning(false);
-          setStartTime(null);
-        }
+        // Calculate current time based on saved start time
+        const now = Date.now();
+        const totalElapsed = Math.floor((now - savedState.sessionStartTime) / 1000);
+        setCurrentTime(totalElapsed);
+        return;
+      }
+
+      // If no saved state, check database
+      const session = await loadActiveSession(user.id);
+      if (session && session.estado === 'activa') {
+        // Calculate session start time based on stored elapsed time
+        const now = Date.now();
+        const calculatedStartTime = now - (session.tiempo_transcurrido * 1000);
+        
+        setActiveSession(session);
+        setSessionStartTime(calculatedStartTime);
+        setCurrentTime(session.tiempo_transcurrido);
+        setIsRunning(true);
       }
     } catch (error) {
-      console.error('Error loading active session:', error);
+      console.error('Error loading timer state:', error);
     }
   };
 
@@ -159,19 +139,13 @@ export const TimerProvider = ({ children }: { children: React.ReactNode }) => {
       if (session) {
         const now = Date.now();
         setActiveSession(session);
+        setSessionStartTime(now);
         setCurrentTime(0);
-        setStartTime(now);
         setIsRunning(true);
         
         toast({
           title: "Timer iniciado",
           description: "El contador de tiempo ha comenzado para esta tarea.",
-        });
-      } else {
-        toast({
-          title: "Error",
-          description: "No se pudo iniciar el timer.",
-          variant: "destructive",
         });
       }
     } catch (error) {
@@ -185,12 +159,11 @@ export const TimerProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   const pauseTimer = async () => {
-    if (!activeSession) return;
+    if (!activeSession || !sessionStartTime) return;
 
     try {
       await updateSessionState(activeSession.id, 'pausada', currentTime);
       setIsRunning(false);
-      setStartTime(null);
       setActiveSession({ ...activeSession, estado: 'pausada', tiempo_transcurrido: currentTime });
       
       toast({
@@ -212,10 +185,11 @@ export const TimerProvider = ({ children }: { children: React.ReactNode }) => {
 
     try {
       await updateSessionState(activeSession.id, 'activa');
+      // Reset session start time to current time minus elapsed time
       const now = Date.now();
-      const resumeStartTime = now - (currentTime * 1000);
+      const newStartTime = now - (currentTime * 1000);
       
-      setStartTime(resumeStartTime);
+      setSessionStartTime(newStartTime);
       setIsRunning(true);
       setActiveSession({ ...activeSession, estado: 'activa' });
       
@@ -245,7 +219,7 @@ export const TimerProvider = ({ children }: { children: React.ReactNode }) => {
       setActiveSession(null);
       setCurrentTime(0);
       setIsRunning(false);
-      setStartTime(null);
+      setSessionStartTime(null);
       
       // Clear localStorage
       localStorage.removeItem('activeTimer');

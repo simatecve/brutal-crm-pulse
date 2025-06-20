@@ -1,28 +1,26 @@
 
-import { TimerState } from '@/types/timer';
+interface TimerPersistenceState {
+  session: any;
+  sessionStartTime: number;
+  isRunning: boolean;
+}
 
-export const saveTimerState = (activeSession: any, currentTime: number, isRunning: boolean, startTime?: number | null) => {
-  if (activeSession) {
-    localStorage.setItem('activeTimer', JSON.stringify({
-      session: activeSession,
-      currentTime,
-      isRunning,
-      startTime: isRunning ? startTime : null
-    }));
-  } else {
-    localStorage.removeItem('activeTimer');
+export const saveTimerState = (state: TimerPersistenceState) => {
+  try {
+    localStorage.setItem('activeTimer', JSON.stringify(state));
+  } catch (error) {
+    console.error('Error saving timer state:', error);
   }
 };
 
-export const loadTimerState = (): (TimerState & { startTime?: number | null }) | null => {
-  const saved = localStorage.getItem('activeTimer');
-  if (saved) {
-    try {
+export const loadTimerState = (): TimerPersistenceState | null => {
+  try {
+    const saved = localStorage.getItem('activeTimer');
+    if (saved) {
       return JSON.parse(saved);
-    } catch (error) {
-      console.error('Error loading timer state:', error);
-      return null;
     }
+  } catch (error) {
+    console.error('Error loading timer state:', error);
   }
   return null;
 };
