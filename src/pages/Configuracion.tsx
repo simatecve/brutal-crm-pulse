@@ -8,11 +8,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Settings, Clock, Bell, Palette, Target } from 'lucide-react';
+import { Settings, Clock, Bell, Palette, Target, Keyboard } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
 import PomodoroConfig from '@/components/configuracion/PomodoroConfig';
 import ObjetivosConfig from '@/components/configuracion/ObjetivosConfig';
 import NotificacionesConfig from '@/components/configuracion/NotificacionesConfig';
+import AtajosConfig from '@/components/configuracion/AtajosConfig';
 
 const Configuracion = () => {
   const [configuracion, setConfiguracion] = useState({
@@ -40,6 +42,12 @@ const Configuracion = () => {
       description: "Tus preferencias han sido actualizadas correctamente.",
     });
   };
+
+  // Activar atajos de teclado
+  useKeyboardShortcuts({
+    enabled: configuracion.atajosHabilitados,
+    onSave: guardarConfiguracion
+  });
 
   useEffect(() => {
     const configGuardada = localStorage.getItem('configuracion_app');
@@ -76,6 +84,10 @@ const Configuracion = () => {
           <TabsTrigger value="general" className="font-black data-[state=active]:bg-yellow-400">
             <Settings className="mr-2" size={16} />
             GENERAL
+          </TabsTrigger>
+          <TabsTrigger value="atajos" className="font-black data-[state=active]:bg-yellow-400">
+            <Keyboard className="mr-2" size={16} />
+            ATAJOS
           </TabsTrigger>
           <TabsTrigger value="tiempo" className="font-black data-[state=active]:bg-yellow-400">
             <Clock className="mr-2" size={16} />
@@ -150,6 +162,12 @@ const Configuracion = () => {
               </div>
             </div>
           </Card>
+        </TabsContent>
+
+        <TabsContent value="atajos">
+          <AtajosConfig
+            configuracion={configuracion}
+          />
         </TabsContent>
 
         <TabsContent value="tiempo">
